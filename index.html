@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#111111">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>VegTrack</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg:         #111;
+      --surface:    #1c1c1e;
+      --surface-2:  #2c2c2e;
+      --border:     #3a3a3c;
+      --text:       #f0f0f0;
+      --muted:      #8e8e93;
+      --accent:     #30d158;
+      --accent-bg:  #1a3d27;
+      --selected:   #30d15815;
+    }
+
+    html { height: 100%; }
+
+    body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.4;
+      padding: 12px 12px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 520px;
+      margin: 0 auto;
+      overflow-x: hidden;
+    }
+
+    /* ─── Card ────────────────────────────────────────────── */
+
+    .card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 16px;
+      width: 100%;
+    }
+
+    .card__title {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    /* ─── Chart ───────────────────────────────────────────── */
+
+    #chart-scroll {
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      overscroll-behavior-x: none;
+    }
+
+    #chart-scroll::-webkit-scrollbar { display: none; }
+
+    #chart {
+      border-collapse: collapse;
+      table-layout: fixed;
+      /* column width computed by JS so exactly 7 fit the viewport */
+    }
+
+    .chart-cell {
+      height: 44px;
+      text-align: center;
+      vertical-align: middle;
+      border: 1px solid var(--border);
+      font-size: 18px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color .7s;
+    }
+
+    .chart-cell--date {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      line-height: 1.3;
+      padding: 0 2px;
+    }
+
+    .chart-cell--empty {
+      color: var(--border);
+      font-size: 15px;
+    }
+
+    /* JS adds this class to all cells in the selected column */
+    .chart-cell--selected {
+      background-color: var(--selected);
+    }
+
+    /* ─── Chart slider ──────────────────────────────────────── */
+
+    #chart-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      height: 10px;
+      border-radius: 2px;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+
+    #chart-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 36px;
+      height: 15px;
+      border-radius: 5px;
+      background: var(--muted);
+    }
+
+    #chart-slider::-moz-range-thumb {
+      width: 36px;
+      height: 15px;
+      border-radius: 5px;
+      background: var(--muted);
+      border: none;
+    }
+
+    /* ─── Card header (title + tooltip) ──────────────────── */
+
+    .card__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .card__header .card__title {
+      margin-bottom: 0;
+    }
+
+    #form-tooltip {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ─── Legend ─────────────────────────────────────────── */
+
+    #legend {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height .35s ease;
+    }
+
+    #legend.open { max-height: 600px; }
+
+    #legend-inner {
+      position: relative;
+      padding: 4px 0 16px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* ─── Stats ───────────────────────────────────────────── */
+
+    #stats-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #stats-list li { font-size: 15px; }
+
+    /* ─── Form ────────────────────────────────────────────── */
+
+    #entry-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-field__label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .form-field--row {
+      flex-direction: row;
+      gap: 12px;
+    }
+
+    .form-field--row .form-field__item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-field--row .toggle-btn {
+      width: 100%;
+    }
+
+    .toggle-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 52px;
+      background: var(--surface-2);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 24px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .toggle-btn:active { opacity: .7; }
+
+    .toggle-btn.active {
+      background: var(--accent-bg);
+      border-color: var(--accent);
+    }
+
+    #btn-save {
+      width: 100%;
+      padding: 16px;
+      background: var(--accent);
+      border: none;
+      border-radius: 12px;
+      color: #000;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #btn-save:active { opacity: .8; }
+
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════ CHART ═══════════════════════════ -->
+  <section class="card" id="section-chart">
+    <p class="card__title" id="chart-title">График</p>
+    <div id="chart-scroll">
+      <!--
+        Таблица 5 строк × 28 столбцов (последние 28 дней).
+        Видимы одновременно 7 столбцов; ширина колонки задаётся JS.
+        Столбцы и ячейки инжектируются JS при инициализации.
+
+        Структура строк:
+          row-dates   — даты (thead)
+          row-diet    — тип питания:  🥩 🧀 🥦 / —
+          row-volume  — объём:        🔺 🔻 / ничего
+          row-junk    — вредная пища: 💔 / ничего
+          row-alcohol — алкоголь:     🍺 / ничего
+      -->
+      <table id="chart" role="grid" aria-label="Данные питания по дням">
+        <colgroup id="chart-cols">
+          <!-- <col class="chart-col"> × 28, injected by JS -->
+        </colgroup>
+        <thead>
+          <tr id="row-dates">
+            <!-- <th class="chart-cell chart-cell--date" data-col="0">22<br>мар</th> -->
+          </tr>
+        </thead>
+        <tbody>
+          <tr id="row-diet">
+            <!-- <td class="chart-cell" data-col="0" data-row="diet">🥩</td> -->
+          </tr>
+          <tr id="row-volume">
+            <!-- <td class="chart-cell" data-col="0" data-row="volume">🔺</td> -->
+          </tr>
+          <tr id="row-junk">
+            <!-- <td class="chart-cell" data-col="0" data-row="junk">💔</td> -->
+          </tr>
+          <tr id="row-alcohol">
+            <!-- <td class="chart-cell" data-col="0" data-row="alcohol">🍺</td> -->
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <input id="chart-slider" type="range" min="0" max="1" step="1"
+           aria-label="Прокрутка графика">
+  </section>
+
+  <!-- ═══════════════════ STATS ════════════════════════════ -->
+  <!--
+    Отображается только при выбранном дне на графике.
+    Содержимое инжектируется JS по правилам из ТЗ.
+  -->
+  <section class="card" id="section-stats">
+    <p class="card__title">Проблемы и рекомендации</p>
+    <ul id="stats-list" role="list">
+      <!-- <li>🟢 Всё в порядке</li> -->
+    </ul>
+  </section>
+
+  <!-- ═══════════════════ FORM ═════════════════════════════ -->
+  <!--
+    Режим «Сегодня»:  виден, если за сегодня данные не внесены.
+    Режим «Правка»:   виден при выборе дня на графике;
+                      заголовок и поле даты меняются на выбранный день.
+  -->
+  <section class="card" id="section-form">
+    <div class="card__header">
+      <p class="card__title" id="form-title">Сегодня</p>
+      <button id="form-tooltip" aria-label="Подсказка" aria-expanded="false">?</button>
+    </div>
+    <div id="legend">
+      <div id="legend-inner">
+        <!-- легенда -->
+         <p><strong>Легенда</strong></p>
+            <p>🥩 — мясо, 🧀 — молочка, 🥦 — овощи</p>
+            <p>🔻 — мало еды, 🔺 — много еды</p>
+            <p>💔 — была вредная пища</p>
+            <p>🍺 — был алкоголь</p>
+      </div>
+    </div>
+
+    <form id="entry-form" novalidate>
+
+      <div class="form-field">
+        <span class="form-field__label">Тип питания</span>
+        <div class="toggle-group" id="group-diet"
+             role="group" aria-label="Тип питания">
+          <button type="button" class="toggle-btn"
+                  data-group="diet" data-value="meat"  aria-pressed="false">🥩</button>
+          <button type="button" class="toggle-btn"
+                  data-group="diet" data-value="dairy" aria-pressed="false">🧀</button>
+          <button type="button" class="toggle-btn"
+                  data-group="diet" data-value="veg"   aria-pressed="false">🥦</button>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <span class="form-field__label">Объём пищи</span>
+        <div class="toggle-group" id="group-volume"
+             role="group" aria-label="Объём пищи">
+          <button type="button" class="toggle-btn"
+                  data-group="volume" data-value="low"      aria-pressed="false">🔻</button>
+          <button type="button" class="toggle-btn"
+                  data-group="volume" data-value="moderate" aria-pressed="false">▫️</button>
+          <button type="button" class="toggle-btn"
+                  data-group="volume" data-value="high"     aria-pressed="false">🔺</button>
+        </div>
+      </div>
+
+      <div class="form-field form-field--row">
+        <div class="form-field__item">
+          <span class="form-field__label">Вредная пища</span>
+          <div class="toggle-group" id="group-junk"
+               role="group" aria-label="Вредная пища">
+            <button type="button" class="toggle-btn"
+                    data-group="junk" data-value="yes" aria-pressed="false">💔</button>
+          </div>
+        </div>
+        <div class="form-field__item">
+          <span class="form-field__label">Алкоголь</span>
+          <div class="toggle-group" id="group-alcohol"
+               role="group" aria-label="Алкоголь">
+            <button type="button" class="toggle-btn"
+                    data-group="alcohol" data-value="yes" aria-pressed="false">🍺</button>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" id="btn-save">Записать</button>
+
+    </form>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
