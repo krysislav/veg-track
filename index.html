@@ -67,12 +67,24 @@
 
     #chart-scroll {
       overflow-x: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
       overscroll-behavior-x: none;
+      scroll-behavior: smooth;
+      scrollbar-width: thin;
+      scrollbar-color: var(--muted) transparent;
     }
 
-    #chart-scroll::-webkit-scrollbar { display: none; }
+    #chart-scroll::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    #chart-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    #chart-scroll::-webkit-scrollbar-thumb {
+      background: var(--muted);
+      border-radius: 2px;
+    }
 
     #chart {
       border-collapse: collapse;
@@ -280,6 +292,11 @@
     #btn-save:active { opacity: .8; }
 
     [hidden] { display: none !important; }
+
+    #section-swap {
+      position: relative;
+      overflow: hidden;
+    }
   </style>
 </head>
 <body>
@@ -325,16 +342,14 @@
         </tbody>
       </table>
     </div>
-    <input id="chart-slider" type="range" min="0" max="1" step="1"
-           aria-label="Прокрутка графика">
   </section>
-
+  <div id="section-swap">
   <!-- ═══════════════════ STATS ════════════════════════════ -->
   <!--
     Отображается только при выбранном дне на графике.
     Содержимое инжектируется JS по правилам из ТЗ.
   -->
-  <section class="card" id="section-stats">
+  <section class="card" id="section-stats" hidden>
     <p class="card__title">Проблемы и рекомендации</p>
     <ul id="stats-list" role="list">
       <!-- <li>🟢 Всё в порядке</li> -->
@@ -347,7 +362,7 @@
     Режим «Правка»:   виден при выборе дня на графике;
                       заголовок и поле даты меняются на выбранный день.
   -->
-  <section class="card" id="section-form">
+  <section class="card" id="section-form" hidden>
     <div class="card__header">
       <p class="card__title" id="form-title">Сегодня</p>
       <button id="form-tooltip" aria-label="Подсказка" aria-expanded="false">?</button>
@@ -414,6 +429,8 @@
 
     </form>
   </section>
+
+  </div> <!-- /#section-swap -->
 
   <script src="app.js"></script>
 </body>

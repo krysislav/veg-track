@@ -35,7 +35,43 @@ const entryForm    = $('entry-form');
 const btnSave      = $('btn-save');
 const btnTooltip   = $('form-tooltip');
 const legend       = $('legend');
-const chartSlider  = $('chart-slider');
+
+// ─── Animated section visibility ─────────────────────────────────────────
+function showSection(el) {
+  el._hiding = false;
+  // place off-screen to the right before making visible
+  el.style.transition = 'none';
+  el.style.opacity    = '0';
+  el.style.transform  = 'translateX(48px)';
+  el.hidden = false;
+  el.getBoundingClientRect();               // force reflow
+  el.style.transition = 'opacity .7s ease, transform .7s ease';
+  el.style.opacity    = '';
+  el.style.transform  = '';
+}
+
+function hideSection(el) {
+  if (el.hidden) return;
+  el._hiding = true;
+  // pin element absolutely so sibling sizes the wrapper
+  const swap     = el.parentElement;
+  const elRect   = el.getBoundingClientRect();
+  const swapRect = swap.getBoundingClientRect();
+  el.style.position = 'absolute';
+  el.style.top      = (elRect.top - swapRect.top) + 'px';
+  el.style.left     = '0';
+  el.style.width    = elRect.width + 'px';
+  el.getBoundingClientRect();               // force reflow
+  el.style.transition = 'opacity .7s ease, transform .7s ease';
+  el.style.opacity    = '0';
+  el.style.transform  = 'translateX(-48px)';
+  el.addEventListener('transitionend', () => {
+    if (el._hiding) {
+      el.hidden = true;
+      el.style.cssText = '';
+    }
+  }, { once: true });
+}
 
 // ─── Date helpers ──────────────────────────────────────────────────────────
 
@@ -158,12 +194,6 @@ function buildChart() {
 
   chartScroll.scrollLeft = targetDayIndex * cw;
 
-  // sync slider range to pixel scroll range
-  const maxScroll = cw * TOTAL_DAYS - chartScroll.clientWidth;
-  chartSlider.max   = maxScroll;
-  chartSlider.step  = 1;
-  chartSlider.value = targetDayIndex * cw;
-
   // re-apply selection highlight if a date is selected
   if (selectedDate !== null) {
     const sel = days.indexOf(selectedDate);
@@ -185,7 +215,7 @@ function selectColumn(colIndex) {
   selectedDate = dateStr;
   clearColumnHighlight();
   highlightColumn(colIndex);
-  showEditForm(dateStr);
+  updateFormVisibility();
 }
 
 function clearColumnHighlight() {
@@ -314,8 +344,6 @@ function renderStats() {
       statsList.appendChild(li);
     });
   }
-
-  sectionStats.hidden = false;
 }
 
 // ─── Form ──────────────────────────────────────────────────────────────────
@@ -345,7 +373,6 @@ function showTodayForm() {
   currentFormDate = todayStr();
   setFormValues(null);
   btnSave.textContent = 'Записать';
-  sectionForm.hidden = false;
 }
 
 function showEditForm(dateStr) {
@@ -355,16 +382,20 @@ function showEditForm(dateStr) {
   currentFormDate = dateStr;
   setFormValues(entries[dateStr] ?? null);
   btnSave.textContent = 'Сохранить';
-  sectionForm.hidden = false;
 }
 
 function updateFormVisibility() {
   if (selectedDate !== null) {
     showEditForm(selectedDate);
+    showSection(sectionForm);
+    hideSection(sectionStats);
   } else if (!entries[todayStr()]) {
     showTodayForm();
+    showSection(sectionForm);
+    hideSection(sectionStats);
   } else {
-    sectionForm.hidden = true;
+    hideSection(sectionForm);
+    showSection(sectionStats);
   }
 }
 
@@ -395,23 +426,11 @@ chartTable.addEventListener('click', e => {
   selectColumn(Number(cell.dataset.col));
 });
 
-// Chart scroll → sync slider + refresh stats
-let _sliderUpdating = false;
-
+// Chart scroll → refresh title + stats
 chartScroll.addEventListener('scroll', () => {
-  if (!_sliderUpdating) {
-    chartSlider.value = chartScroll.scrollLeft;
-  }
   updateChartTitle();
   renderStats();
 }, { passive: true });
-
-// Slider → sync chart scroll
-chartSlider.addEventListener('input', () => {
-  _sliderUpdating = true;
-  chartScroll.scrollLeft = Number(chartSlider.value);
-  _sliderUpdating = false;
-});
 
 // Form submit
 entryForm.addEventListener('submit', e => {
