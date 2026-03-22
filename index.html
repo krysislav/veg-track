@@ -36,10 +36,10 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 15px;
       line-height: 1.4;
-      padding: 12px 12px 40px;
+      padding: 8px 12px 20px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
       max-width: 520px;
       margin: 0 auto;
       overflow-x: hidden;
@@ -50,7 +50,7 @@
     .card {
       background: var(--surface);
       border-radius: 14px;
-      padding: 16px;
+      padding: 12px;
       width: 100%;
     }
 
@@ -60,7 +60,7 @@
       letter-spacing: .06em;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     /* ─── Chart ───────────────────────────────────────────── */
@@ -68,7 +68,6 @@
     #chart-scroll {
       overflow-x: auto;
       overscroll-behavior-x: none;
-      scroll-behavior: smooth;
       scrollbar-width: thin;
       scrollbar-color: var(--muted) transparent;
     }
@@ -93,11 +92,11 @@
     }
 
     .chart-cell {
-      height: 44px;
+      height: 36px;
       text-align: center;
       vertical-align: middle;
       border: 1px solid var(--border);
-      font-size: 18px;
+      font-size: 17px;
       cursor: pointer;
       user-select: none;
       transition: background-color .7s;
@@ -159,7 +158,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .card__header .card__title {
@@ -207,17 +206,17 @@
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
     }
 
-    #stats-list li { font-size: 15px; }
+    #stats-list li { font-size: 14px; }
 
     /* ─── Form ────────────────────────────────────────────── */
 
     #entry-form {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 12px;
     }
 
     .form-field {
@@ -257,12 +256,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 52px;
+      height: 44px;
       background: var(--surface-2);
       border: 1.5px solid var(--border);
       border-radius: 10px;
       color: var(--text);
-      font-size: 24px;
+      font-size: 22px;
       cursor: pointer;
       transition: background .15s, border-color .15s;
       -webkit-tap-highlight-color: transparent;
@@ -277,7 +276,7 @@
 
     #btn-save {
       width: 100%;
-      padding: 16px;
+      padding: 12px;
       background: var(--accent);
       border: none;
       border-radius: 12px;
@@ -296,6 +295,11 @@
     #section-swap {
       position: relative;
       overflow: hidden;
+    }
+
+    #section-stats,
+    #section-form {
+      transition: opacity .35s ease;
     }
   </style>
 </head>

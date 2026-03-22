@@ -39,38 +39,30 @@ const legend       = $('legend');
 // ─── Animated section visibility ─────────────────────────────────────────
 function showSection(el) {
   el._hiding = false;
-  // place off-screen to the right before making visible
-  el.style.transition = 'none';
-  el.style.opacity    = '0';
-  el.style.transform  = 'translateX(48px)';
+  el.style.opacity = '0';
   el.hidden = false;
-  el.getBoundingClientRect();               // force reflow
-  el.style.transition = 'opacity .7s ease, transform .7s ease';
-  el.style.opacity    = '';
-  el.style.transform  = '';
+  el.getBoundingClientRect();          // force reflow
+  el.style.opacity = '';               // let CSS transition take over
 }
 
-function hideSection(el) {
-  if (el.hidden) return;
+function hideSection(el, onDone) {
+  if (el.hidden) { onDone?.(); return; }
   el._hiding = true;
-  // pin element absolutely so sibling sizes the wrapper
-  const swap     = el.parentElement;
-  const elRect   = el.getBoundingClientRect();
-  const swapRect = swap.getBoundingClientRect();
-  el.style.position = 'absolute';
-  el.style.top      = (elRect.top - swapRect.top) + 'px';
-  el.style.left     = '0';
-  el.style.width    = elRect.width + 'px';
-  el.getBoundingClientRect();               // force reflow
-  el.style.transition = 'opacity .7s ease, transform .7s ease';
-  el.style.opacity    = '0';
-  el.style.transform  = 'translateX(-48px)';
+  el.style.opacity = '0';
   el.addEventListener('transitionend', () => {
     if (el._hiding) {
       el.hidden = true;
-      el.style.cssText = '';
+      el.style.opacity = '';
+      onDone?.();
     }
   }, { once: true });
+}
+
+function swapSections(hide, show, prepareShow) {
+  hideSection(hide, () => {
+    prepareShow?.();
+    showSection(show);
+  });
 }
 
 // ─── Date helpers ──────────────────────────────────────────────────────────
@@ -141,12 +133,12 @@ function colWidth() {
 
 function buildChart() {
   const cw = colWidth();
+  const isFirstBuild = !chartBuilt;
 
   // Preserve scroll position in day-index space across rebuilds
   let targetDayIndex;
-  if (!chartBuilt) {
+  if (isFirstBuild) {
     targetDayIndex = TOTAL_DAYS - VISIBLE_COLS;   // start showing last 7 days
-    chartBuilt = true;
   } else {
     targetDayIndex = currentColW > 0
       ? Math.round(chartScroll.scrollLeft / currentColW)
@@ -192,7 +184,7 @@ function buildChart() {
     });
   });
 
-  chartScroll.scrollLeft = targetDayIndex * cw;
+  chartScroll.scrollLeft = 999999;  // scroll to end (today) by default
 
   // re-apply selection highlight if a date is selected
   if (selectedDate !== null) {
@@ -386,16 +378,9 @@ function showEditForm(dateStr) {
 
 function updateFormVisibility() {
   if (selectedDate !== null) {
-    showEditForm(selectedDate);
-    showSection(sectionForm);
-    hideSection(sectionStats);
-  } else if (!entries[todayStr()]) {
-    showTodayForm();
-    showSection(sectionForm);
-    hideSection(sectionStats);
+    swapSections(sectionStats, sectionForm, () => showEditForm(selectedDate));
   } else {
-    hideSection(sectionForm);
-    showSection(sectionStats);
+    swapSections(sectionForm, sectionStats);
   }
 }
 
@@ -468,7 +453,12 @@ function init() {
   buildChart();
   updateChartTitle();
   renderStats();
-  updateFormVisibility();
+
+  if (!entries[todayStr()]) {
+    selectColumn(days.length - 1);   // open today's edit form
+  } else {
+    updateFormVisibility();          // show stats
+  }
 }
 
 init();
