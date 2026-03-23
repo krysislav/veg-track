@@ -8,6 +8,80 @@ const VISIBLE_COLS = 7;
 const DIET_EMOJI = { meat: '🥩', dairy: '🧀', veg: '🥦' };
 const VOL_EMOJI  = { low: '🔻', moderate: '▫️', high: '🔺' };           // moderate → ''
 
+// ─── i18n ──────────────────────────────────────────────────────────────────
+const LANG = navigator.language?.startsWith('ru') ? 'ru' : 'en';
+
+const I18N = {
+  ru: {
+    locale: 'ru',
+    chartTitle:      (a, b) => `График с ${a} по ${b}`,
+    statsTitle:      'Проблемы и рекомендации',
+    noData:          'Данных нет',
+    notEnoughData:   'Недостаточно данных',
+    allGood:         'Всё в порядке',
+    getSober:        'Хватит бухать!',
+    tooMuchAlcohol:  'Алкоголя многовато',
+    stopJunk:        'Хватит жрать хрючево!',
+    tooMuchJunk:     'Очень много вредных угощений',
+    aLittleJunk:     'Немножко вредных угощений',
+    timeToEat:       'Пора пожрать',
+    aBitHungry:      'Лёгкое недоедание',
+    overeating:      'Обжорство',
+    aBitOvereating:  'Лёгкое переедание',
+    stabilizeDiet:   'Питаться нужно в меру!',
+    dietUnstable:    'Диета совсем разладилась 😟',
+    dietShaky:       'Диета чуть-чуть нестабильная 🙃',
+    todayLabel:      d => `Сегодня — ${d}`,
+    editLabel:       d => `Редактировать — ${d}`,
+    btnRecord:       'Записать',
+    btnSave:         'Сохранить',
+    legendTitle:     'Легенда',
+    legendMeat:      '🥩 — мясо, 🧀 — молочка, 🥦 — овощи',
+    legendVolume:    '🔻 — мало еды, 🔺 — много еды',
+    legendJunk:      '💔 — была вредная пища',
+    legendAlcohol:   '🍺 — был алкоголь',
+    dietType:        'Тип питания',
+    foodVolume:      'Объём пищи',
+    junkFood:        'Вредная пища',
+    alcohol:         'Алкоголь',
+  },
+  en: {
+    locale: 'en',
+    chartTitle:      (a, b) => `Stats from ${a} to ${b}`,
+    statsTitle:      'Problems and Recommendations',
+    noData:          'No data yet',
+    notEnoughData:   'Not enough data',
+    allGood:         'Everything is fine',
+    getSober:        'Get sober!',
+    tooMuchAlcohol:  'Too much alcohol',
+    stopJunk:        'Stop eating garbage!',
+    tooMuchJunk:     'Too much junk food',
+    aLittleJunk:     'A little junk food',
+    timeToEat:       'It\'s time to eat!',
+    aBitHungry:      'A bit hungry',
+    overeating:      'Significant overeating',
+    aBitOvereating:  'A bit overeating',
+    stabilizeDiet:   'You should really stabilize your diet!',
+    dietUnstable:    'Your diet is quite unstable 😟',
+    dietShaky:       'Your diet is a little shaky 🙃',
+    todayLabel:      d => `Today — ${d}`,
+    editLabel:       d => `Edit — ${d}`,
+    btnRecord:       'Save',
+    btnSave:         'Save',
+    legendTitle:     'Legend',
+    legendMeat:      '🥩 — meat, 🧀 — dairy, 🥦 — vegetables',
+    legendVolume:    '🔻 — low food, 🔺 — high food',
+    legendJunk:      '💔 — junk food was consumed',
+    legendAlcohol:   '🍺 — alcohol was consumed',
+    dietType:        'Diet type',
+    foodVolume:      'Food volume',
+    junkFood:        'Junk food',
+    alcohol:         'Alcohol',
+  },
+};
+
+const t = I18N[LANG];
+
 // ─── State ─────────────────────────────────────────────────────────────────
 let entries         = {};    // { 'YYYY-MM-DD': { diet, volume, junk, alcohol } }
 let selectedDate    = null;  // string | null
@@ -93,7 +167,7 @@ function buildDaysList() {
 function formatDateCell(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   const day = d.getDate();
-  const mon = d.toLocaleString('ru', { month: 'short' }).replace('.', '');
+  const mon = d.toLocaleString(t.locale, { month: 'short' }).replace('.', '');
   return `${day}<br>${mon}`;
 }
 
@@ -184,7 +258,12 @@ function buildChart() {
     });
   });
 
-  chartScroll.scrollLeft = 999999;  // scroll to end (today) by default
+  if (isFirstBuild) {
+    chartScroll.scrollLeft = 999999;  // scroll to end (today) on first load
+  } else {
+    chartScroll.scrollLeft = targetDayIndex * cw;  // restore previous position
+  }
+  chartBuilt = true;
 
   // re-apply selection highlight if a date is selected
   if (selectedDate !== null) {
@@ -233,9 +312,9 @@ function updateChartTitle() {
   const period = visiblePeriod();
   if (!period.length) return;
   const fmt = d => new Date(d + 'T00:00:00')
-    .toLocaleString('ru', { day: 'numeric', month: 'short' })
+    .toLocaleString(t.locale, { day: 'numeric', month: 'short' })
     .replace('.', '');
-  chartTitle.textContent = `График с ${fmt(period[0])} по ${fmt(period[period.length - 1])}`;
+  chartTitle.textContent = t.chartTitle(fmt(period[0]), fmt(period[period.length - 1]));
 }
 
 function isUnstable(entry) {
@@ -252,64 +331,66 @@ function renderStats() {
 
   if (filled === 0) {
     const li = document.createElement('li');
-    li.textContent = '⚫️ Данных нет';
+    li.textContent = '⚫️ ' + t.noData;
     statsList.appendChild(li);
     return;
   }
 
   if (filled < 3) {
     const li = document.createElement('li');
-    li.textContent = '⚫️ Недостаточно данных';
+    li.textContent = '⚫️ ' + t.notEnoughData;
     statsList.appendChild(li);
     return;
   }
 
   const warnings = [];   // { level: 'red'|'orange', text: string }
 
-  // ── "подряд" rules: within the visible period ─────────────────────────
+  // ── "in a row" rules: within the visible period ─────────────────────────
   const alcoholDays = pe.filter(e => e?.alcohol === 'yes').length;
   const junkDays    = pe.filter(e => e?.junk    === 'yes').length;
   const lowDays     = pe.filter(e => e?.volume  === 'low').length;
   const highDays    = pe.filter(e => e?.volume  === 'high').length;
   const instPoints  = pe.reduce((s, e) => s + (isUnstable(e) ? 1 : 0), 0);
 
-  // алкоголь
+  // alcohol
   if (alcoholDays >= 4) {
-    warnings.push({ level: 'critical',    text: `Хватит бухать!` });
+    warnings.push({ level: 'critical',    text: t.getSober });
   } else if (alcoholDays >= 2) {
-    warnings.push({ level: 'orange', text: `Алкоголя многовато` });
+    warnings.push({ level: 'orange', text: t.tooMuchAlcohol });
   }
 
-  // вредная пища
+  // junk food
   if (junkDays >= 6) {
-    warnings.push({ level: 'critical',    text: `Хватит жрать хрючево!` });
+    warnings.push({ level: 'critical',    text: t.stopJunk });
   } else if (junkDays >= 5) {
-    warnings.push({ level: 'orange',    text: `Очень много вредных угощений` });
+    warnings.push({ level: 'orange',    text: t.tooMuchJunk });
   } else if (junkDays >= 3) {
-    warnings.push({ level: 'yellow', text: `Немножко вредных угощений` });
+    warnings.push({ level: 'yellow', text: t.aLittleJunk });
   }
 
-  // недоедание
-  if (lowDays >= 4) {
-    warnings.push({ level: 'red', text: `Пора пожрать` });
-  } else if (lowDays >= 2) {
-    warnings.push({ level: 'yellow',    text: `Лёгкое недоедание` });
+  const nutritionalPoints = highDays - lowDays;
+
+  // under-eating
+  if (nutritionalPoints <= -4) {
+    warnings.push({ level: 'red', text: t.timeToEat });
+  } else if (nutritionalPoints <= -2) {
+    warnings.push({ level: 'yellow',    text: t.aBitHungry });
   }
 
-  // переедание
-  if (highDays >= 4) {
-    warnings.push({ level: 'red',    text: `Обжорство` });
-  } else if (highDays >= 2) {
-    warnings.push({ level: 'yellow', text: `Лёгкое переедание` });
+  // over-eating
+  if (nutritionalPoints >= 4) {
+    warnings.push({ level: 'red',    text: t.overeating });
+  } else if (nutritionalPoints >= 2) {
+    warnings.push({ level: 'yellow', text: t.aBitOvereating });
   }
 
-  // общая нестабильность питания
+  // overall diet instability
   if (instPoints >= 5) {
-    warnings.push({ level: 'critical',    text: `Питаться нужно регулярно!` });
+    warnings.push({ level: 'critical',    text: t.stabilizeDiet });
   } else if (instPoints >= 4) {
-    warnings.push({ level: 'orange',    text: `Диета совсем разладилась 😟` });
+    warnings.push({ level: 'orange',    text: t.dietUnstable });
   } else if (instPoints >= 2) {
-    warnings.push({ level: 'yellow', text: `Диета чуть-чуть нестабильная 🙃` });
+    warnings.push({ level: 'yellow', text: t.dietShaky });
   }
 
   const levels = {
@@ -323,7 +404,7 @@ function renderStats() {
   statsList.innerHTML = '';
   if (warnings.length === 0) {
     const li = document.createElement('li');
-    li.textContent = '🟢 Всё в порядке';
+    li.textContent = '🟢 ' + t.allGood;
     statsList.appendChild(li);
   } else {
     warnings.sort((a, b) => {
@@ -360,20 +441,20 @@ function getFormValues() {
 
 function showTodayForm() {
   const d     = new Date(todayStr() + 'T00:00:00');
-  const label = d.toLocaleString('ru', { day: 'numeric', month: 'long' });
-  formTitle.textContent = `Сегодня — ${label}`;
+  const label = d.toLocaleString(t.locale, { day: 'numeric', month: 'long' });
+  formTitle.textContent = t.todayLabel(label);
   currentFormDate = todayStr();
   setFormValues(null);
-  btnSave.textContent = 'Записать';
+  btnSave.textContent = t.btnRecord;
 }
 
 function showEditForm(dateStr) {
   const d     = new Date(dateStr + 'T00:00:00');
-  const label = d.toLocaleString('ru', { day: 'numeric', month: 'long' });
-  formTitle.textContent = `Редактировать — ${label}`;
+  const label = d.toLocaleString(t.locale, { day: 'numeric', month: 'long' });
+  formTitle.textContent = t.editLabel(label);
   currentFormDate = dateStr;
   setFormValues(entries[dateStr] ?? null);
-  btnSave.textContent = 'Сохранить';
+  btnSave.textContent = t.btnSave;
 }
 
 function updateFormVisibility() {
@@ -446,10 +527,26 @@ btnTooltip.addEventListener('click', () => {
 // Viewport resize → recalculate column width
 window.addEventListener('resize', () => buildChart(), { passive: true });
 
+// ─── i18n: apply to static HTML ────────────────────────────────────────────
+function applyI18n() {
+  document.documentElement.lang = t.locale;
+  $('stats-title').textContent = t.statsTitle;
+  $('legend-title').textContent = t.legendTitle;
+  $('legend-l1').textContent = t.legendMeat;
+  $('legend-l2').textContent = t.legendVolume;
+  $('legend-l3').textContent = t.legendJunk;
+  $('legend-l4').textContent = t.legendAlcohol;
+  $('label-diet').textContent = t.dietType;
+  $('label-volume').textContent = t.foodVolume;
+  $('label-junk').textContent = t.junkFood;
+  $('label-alcohol').textContent = t.alcohol;
+}
+
 // ─── Boot ──────────────────────────────────────────────────────────────────
 function init() {
   loadEntries();
   days = buildDaysList();
+  applyI18n();
   buildChart();
   updateChartTitle();
   renderStats();
@@ -462,3 +559,8 @@ function init() {
 }
 
 init();
+
+// ─── Service Worker ────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}

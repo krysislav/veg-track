@@ -8,6 +8,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>VegTrack</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
@@ -321,7 +323,7 @@
           row-junk    — вредная пища: 💔 / ничего
           row-alcohol — алкоголь:     🍺 / ничего
       -->
-      <table id="chart" role="grid" aria-label="Данные питания по дням">
+      <table id="chart" role="grid" aria-label="Diet chart">
         <colgroup id="chart-cols">
           <!-- <col class="chart-col"> × 28, injected by JS -->
         </colgroup>
@@ -354,40 +356,40 @@
     Содержимое инжектируется JS по правилам из ТЗ.
   -->
   <section class="card" id="section-stats" hidden>
-    <p class="card__title">Проблемы и рекомендации</p>
+    <p class="card__title" id="stats-title">Problems and Recommendations</p>
     <ul id="stats-list" role="list">
-      <!-- <li>🟢 Всё в порядке</li> -->
+      <!-- <li>🟢 Everything is fine</li> -->
     </ul>
   </section>
 
   <!-- ═══════════════════ FORM ═════════════════════════════ -->
   <!--
-    Режим «Сегодня»:  виден, если за сегодня данные не внесены.
-    Режим «Правка»:   виден при выборе дня на графике;
-                      заголовок и поле даты меняются на выбранный день.
+    Mode "Today":  visible if today's data has not been entered.
+    Mode "Edit":   visible when a day is selected on the chart;
+                   the title and date field change to the selected day.
   -->
   <section class="card" id="section-form" hidden>
     <div class="card__header">
-      <p class="card__title" id="form-title">Сегодня</p>
-      <button id="form-tooltip" aria-label="Подсказка" aria-expanded="false">?</button>
+      <p class="card__title" id="form-title">Today</p>
+      <button id="form-tooltip" aria-label="Tooltip" aria-expanded="false">?</button>
     </div>
     <div id="legend">
       <div id="legend-inner">
-        <!-- легенда -->
-         <p><strong>Легенда</strong></p>
-            <p>🥩 — мясо, 🧀 — молочка, 🥦 — овощи</p>
-            <p>🔻 — мало еды, 🔺 — много еды</p>
-            <p>💔 — была вредная пища</p>
-            <p>🍺 — был алкоголь</p>
+        <!-- legend -->
+         <p><strong id="legend-title">Legend</strong></p>
+            <p id="legend-l1">🥩 — meat, 🧀 — dairy, 🥦 — vegetables</p>
+            <p id="legend-l2">🔻 — low food, 🔺 — high food</p>
+            <p id="legend-l3">💔 — junk food was consumed</p>
+            <p id="legend-l4">🍺 — alcohol was consumed</p>
       </div>
     </div>
 
     <form id="entry-form" novalidate>
 
       <div class="form-field">
-        <span class="form-field__label">Тип питания</span>
+        <span class="form-field__label" id="label-diet">Diet type</span>
         <div class="toggle-group" id="group-diet"
-             role="group" aria-label="Тип питания">
+             role="group" aria-label="Diet type">
           <button type="button" class="toggle-btn"
                   data-group="diet" data-value="meat"  aria-pressed="false">🥩</button>
           <button type="button" class="toggle-btn"
@@ -398,9 +400,9 @@
       </div>
 
       <div class="form-field">
-        <span class="form-field__label">Объём пищи</span>
+        <span class="form-field__label" id="label-volume">Food volume</span>
         <div class="toggle-group" id="group-volume"
-             role="group" aria-label="Объём пищи">
+             role="group" aria-label="Food volume">
           <button type="button" class="toggle-btn"
                   data-group="volume" data-value="low"      aria-pressed="false">🔻</button>
           <button type="button" class="toggle-btn"
@@ -412,24 +414,24 @@
 
       <div class="form-field form-field--row">
         <div class="form-field__item">
-          <span class="form-field__label">Вредная пища</span>
+          <span class="form-field__label" id="label-junk">Junk food</span>
           <div class="toggle-group" id="group-junk"
-               role="group" aria-label="Вредная пища">
+               role="group" aria-label="Junk food">
             <button type="button" class="toggle-btn"
                     data-group="junk" data-value="yes" aria-pressed="false">💔</button>
           </div>
         </div>
         <div class="form-field__item">
-          <span class="form-field__label">Алкоголь</span>
+          <span class="form-field__label" id="label-alcohol">Alcohol</span>
           <div class="toggle-group" id="group-alcohol"
-               role="group" aria-label="Алкоголь">
+               role="group" aria-label="Alcohol">
             <button type="button" class="toggle-btn"
                     data-group="alcohol" data-value="yes" aria-pressed="false">🍺</button>
           </div>
         </div>
       </div>
 
-      <button type="submit" id="btn-save">Записать</button>
+      <button type="submit" id="btn-save">Save</button>
 
     </form>
   </section>
