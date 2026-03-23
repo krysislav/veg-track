@@ -521,6 +521,7 @@ entryForm.addEventListener('submit', e => {
 // Legend toggle
 btnTooltip.addEventListener('click', () => {
   const open = legend.classList.toggle('open');
+  console.log('Tooltip open:', open);
   btnTooltip.setAttribute('aria-expanded', String(open));
 });
 
